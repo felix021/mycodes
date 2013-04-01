@@ -1,4 +1,5 @@
 from copy import copy
+from GF import *
 
 """
 
@@ -59,6 +60,20 @@ class poly2(object):
         if len(x.coeff) == 0:
             raise ZeroDivisionError("...")
 
+def poly2_eval(poly2, x, y):
+    print poly2
+    ans = 0
+    yi = 1
+    for i in range(len(poly2)):
+        ans = ans + poly_eval(poly2[i], x) * yi
+        yi = yi * y
+    return ans
+
+
 
 if __name__ == "__main__":
     poly2([[1,2,3],[4,5,6]], 1, 1)
+
+    Q = [[2, 5]]
+    print poly2_eval(Q, 3, 1)
+    print poly_eval([2, 5], 3)

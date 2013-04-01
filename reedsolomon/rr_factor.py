@@ -1,9 +1,10 @@
 import sys
 
-from GF import GF, poly_roots
+from GF import GF
 from matlab import *
 from copy import copy
 from hasse import hasse_deriv1
+from poly import *
 
 """
 
@@ -12,9 +13,11 @@ This is copied from the codes downloaded from:
 
 In the  4 tests listed in the __main__ section, this function behaves exactly
 as the rr_factor.m and rr_dfs.m, except for the TODO denoted, where this code
-won't add a 0 to at the begining, and won't do a transpose on f.
+won't add a 0 to at the begining of the result.
 
 """
+
+_debug = False
 
 def rr_factor(Q, D, m):
     p = [-1]
@@ -24,12 +27,10 @@ def rr_factor(Q, D, m):
     coeff = GF([0], m)
     f = GF([], m)
 
-    if size(Q, 1) == 1:
-        Q1 = copy(Q[0])
-        Q1.reverse()
-        for r in poly_roots(Q1):
+    if len(Q) == 1:
+        for r in poly(Q[0], reverse = True).roots():
             f.append([r])
-        #TODO: [0] + f, and transpose?
+        #[[0]] + f ?
         return f
 
     else:
@@ -46,19 +47,16 @@ def adjust_answers(f, m):
 
 def rr_dfs(Qu, D, u, t, p, deg, coeff, f, m):
 
-    #pass by `reference`
-    #p = copy(p)
-    #deg = copy(deg)
-    #coeff = copy(coeff)
-    #f = copy(f)
+    global _debug
 
-    #print "Qu = \n"
-    #for i in Qu: print i
-    #print "D = %d, u = %d, t = %d, m = %d" % (D, u, t, m)
-    #print "p = ", p
-    #print "deg = ", deg
-    #print "coeff =", coeff
-    #print "f = ", f
+    if _debug:
+        print "Qu = \n"
+        for i in Qu: print i
+        print "D = %d, u = %d, t = %d, m = %d" % (D, u, t, m)
+        print "p = ", p
+        print "deg = ", deg
+        print "coeff =", coeff
+        print "f = ", f
 
     n_zero = reduce(lambda x, y: x + y, map(lambda x: x[0] == 0, Qu), 0)
     #print 'n_zero =', n_zero, ', len =', len(Qu)
@@ -81,15 +79,15 @@ def rr_dfs(Qu, D, u, t, p, deg, coeff, f, m):
     elif deg[u] < D:
         Qu0 = copy(Qu[0])
         Qu0.reverse()
-        #print 'Qu0 =\n', Qu0
+        if _debug: print 'Qu0 =\n', Qu0
         R = poly_roots(Qu0)
-        #print 'R =', R
+        if _debug: print 'R =', R
         for i in range(len(R)):
             a = R[i]
             v = t
             t = t + 1
 
-            #print 'i = %d, v = %d, t = %d' % (i, v, t), a
+            if _debug: print 'i = %d, v = %d, t = %d' % (i, v, t), a
 
             
             """
@@ -101,18 +99,24 @@ def rr_dfs(Qu, D, u, t, p, deg, coeff, f, m):
             deg.append(deg[u] + 1)
             coeff.append(a)
 
-            Qv = GF(zeros(size(Qu, 1) * 2 - 1, size(Qu, 1)), m)
-            for r in range(size(Qu, 1)):
+            Qv = GF(zeros(len(Qu) * 2 - 1, len(Qu)), m)
+            for r in range(len(Qu)):
                 gr_y = copy(Qu[r])
                 #print 'gr_y =', gr_y
-                for s in range(size(Qv, 2)):
+                for s in range(len(Qv[0])):
                     Qv[r + s][s] = hasse_deriv1(gr_y, a, s, m)
+                    if _debug and r + s == 1 and s == 0:
+                        print "INPUT:", gr_y, a, s, m
+                        print "OUTPUT:", Qv[r+s][s]
 
-            if size(Qv, 1) > 1:
+            if _debug:
+                for i in Qv: print i
+
+            if len(Qv) > 1:
                 while sum([1 for x in Qv[0] if x != 0]) == 0:
                     Qv = Qv[1:]
 
-                n_row, n_col = size(Qv)
+                n_row, n_col = len(Qv), len(Qv[0])
                 maxi, maxj = 0, 0
                 for i in range(n_row):
                     for j in range(n_col):
@@ -126,19 +130,24 @@ def rr_dfs(Qu, D, u, t, p, deg, coeff, f, m):
                     Qv_new.append(Qv[i][:maxj+1])
                 Qv = Qv_new
 
-            #for i in Qv: print i
+            if _debug: 
+                for i in Qv: print i
+                sys.stdin.readline()
 
-            #sys.stdin.readline()
             t, p, deg, coeff, f = rr_dfs(Qv, D, v, t, p, deg, coeff, f, m)
-            #print 'f=',f
+
+            if _debug: print 'f=',f
         #endif
 
     return (t, p, deg, coeff, f)
 
 if __name__ == "__main__":
-    from GF import GF
+    from GF import GF, set_debug
+    set_debug(True)
 
-    """
+    #_debug = True
+
+    #"""
 
     Q = GF([
         [0 , 5 , 3],
@@ -150,7 +159,8 @@ if __name__ == "__main__":
         [7 , 0 , 0],
         [1 , 0 , 0],
         [3 , 0 , 0],
-    ], 3) #[[0, 5, 6, 6, 1], [3, 7, 7, 5, 0]]
+    ], 3) 
+    assert(rr_factor(Q, 6, 3) == [[0, 5, 6, 6, 1], [3, 7, 7, 5, 0]])
     
     Q = GF([
         [6,3],
@@ -167,7 +177,8 @@ if __name__ == "__main__":
         [3,0],
         [2,0],
         [5,0],
-        ], 3) #2 3 3 4 3
+        ], 3)
+    assert(rr_factor(Q, 6, 3) == [[2,3,3,4,3]])
 
     Q = GF([
         [6 , 7 , 2],
@@ -183,8 +194,8 @@ if __name__ == "__main__":
         [3 , 0 , 0],
         [2 , 0 , 0],
         [6 , 0 , 0],
-    ], 3) #[[2, 7, 7, 7, 0], [4, 7, 4, 2, 4]]
-    """
+    ], 3) 
+    assert(rr_factor(Q, 6, 3) == [[2, 7, 7, 7, 0], [4, 7, 4, 2, 4]])
 
     Q = GF([
         [0 ,0 ,2 ,7], 
@@ -200,8 +211,13 @@ if __name__ == "__main__":
         [0 ,0 ,0 ,0], 
         [0 ,0 ,0 ,0], 
         [7 ,0 ,0 ,0], 
-    ], 3) #[[0, 5, 6, 6, 1] * n, [3, 7, 7, 5, 0]]
+    ], 3) 
+    #_debug = True
+    assert(rr_factor(Q, 6, 3) == [[0, 5, 6, 6, 1]] * 32 + [[3, 7, 7, 5, 0]])
     
-    print rr_factor(Q, 6, 3)
+    Q = GF([[0, 5, 0, 2]], 3) #[[0,5,5]]
+    assert(rr_factor(Q, 6, 3) == [[0],[5],[5]])
 
-    #print rr_factor(GF([[6,7,2]], 3), 6, 3)
+    assert(rr_factor(GF([[6,7,2]], 3), 6, 3) == [[2],[4]])
+
+    print 'all test passed'

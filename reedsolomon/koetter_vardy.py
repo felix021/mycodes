@@ -10,6 +10,12 @@ Reed Solomon Codes".
 
 The interpolation step is not implemented here.
 
+An algorithm proposed by Gross simplified the process:
+    ("Towards a VLSI architecture for interpolation-based soft-decision Reed-Solomon decoders")
+
+    M = floor(Lambda * P)
+        where Lambda is a carefully chosen number close to max(M)
+
 """
 
 def koetter_vardy(P, s):

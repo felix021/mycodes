@@ -21,24 +21,23 @@ def hasse_deriv1(g, x, r, m):
     return val
 
 if __name__ == "__main__":
-    """
     g = GF.GF([0, 5, 3], 3)
     x = GF.GF(0, 3)
     r = 0
     m = 3
-    print hasse_deriv1(g, x, r, m) #produce a^0 = 0
-    """
+    assert(hasse_deriv1(g, x, r, m) == 0)
+   
 
-    """
     g = GF.GF([3, 3, 7, 7], 3)
     a = GF.GF(5, 3)
     r = 1
     m = 3
-    print hasse_deriv1(g, a, r, m) #should produce a^0 = 0
-    """
+    assert(hasse_deriv1(g, a, r, m) == 0)
 
-    g = GF.GF([7, 0, 0, 0], 3)
-    a = GF.GF(5, 3)
+    g = GF.GF([7, 7, 6], 3)
+    a = GF.GF(0, 3)
     r = 0
     m = 3
-    print hasse_deriv1(g, a, r, m) #should produce a^0 = 0
+    assert(hasse_deriv1(g, a, r, m) == 7)
+
+    print 'all test passed'

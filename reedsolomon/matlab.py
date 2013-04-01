@@ -8,7 +8,10 @@ Some humble functions trying to simulate as the matlab equivalents
 from copy import copy
 import GF
 
-def size(M, n = -1):
+def size(M, n = -1): #treat [] as [[]]
+    if not isinstance(M[0], list) and not isinstance(M[0], tuple):
+        M = [M]
+
     ret = []
     t = M
     i = 0
@@ -22,7 +25,7 @@ def size(M, n = -1):
         return ret
     return ret[n - 1]
 
-def zeros(m, n = 0):
+def zeros(m, n = 0):  #zeros(3) => 3*3 matrix
     if n == 0:
         n = m
 
@@ -45,7 +48,7 @@ def findmax(P):
     return (mi, mj)
 
 def dump_matrix2(M):
-    print '[' + ';\n'.join(map(lambda i: ' '.join(map(str, i)), M)) + ']'
+    print '[' + ';\n'.join('['+s+']' for s in map(lambda i: '  '.join(map(str, i)), M)) + ']'
 
 def reshape(M, r, c):
     R = zeros(r, c)
@@ -62,7 +65,17 @@ def transpose(R):
     return map(list, zip(*R))
 
 if __name__ == "__main__":
-    print size([1, 2, 3], 1)
-    print zeros(3)
+    assert(size([1,2,3], 1) == 1)
+    assert(size([1,2,3], 2) == 3)
+    assert(size([[1,2,3],[4,5,6]]) == [2,3])
+    assert(size([[1,2,3],[4,5,6]], 1) == 2)
+    assert(size([[1,2,3],[4,5,6]], 2) == 3)
+    assert(size([[[1,1,1],[1,1,1]]]) == [1,2,3])
+    assert(size([[[1,1,1],[1,1,1]]], 3) == 3)
+    assert(zeros(2) == [[0,0],[0,0]])
+
     R = reshape([[1,2,3],[4,5,6]],3,2)
-    print map(str, R)
+    R = transpose(R)
+    assert(R == [[1,3,5],[2,4,6]])
+
+    print 'all test passed'

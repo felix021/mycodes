@@ -20,10 +20,17 @@ and ReedSolo copies them from Bobmath's:
 
 """
 
+import sys
 from copy import copy
 
+_debug = False
+
+def set_debug(debug = False):
+    global _debug
+    _debug = debug
+
 _poly = {
-    2: 7,
+    4: 7,
     8: 11,
     16: 19,
     32: 37,
@@ -46,18 +53,17 @@ class GF_op(object):
         self.q = 2 ** m
         self.n = self.q - 1
         self.calc_elements()
-        self.alpha = 2
 
     def calc_elements(self):
         self.exp = [1] * (self.q * 2)
         self.log = [0] * self.q
         self.log[0] = -1
         x = 1
-        poly = _poly[self.q]
+        prim_poly = _poly[self.q]
         for i in range(1, self.n):
             x <<= 1
             if x & self.q:
-                x ^= poly
+                x ^= prim_poly
             self.exp[i] = x
             self.log[x] = i
         for i in range(self.n, self.q * 2):
@@ -77,78 +83,20 @@ class GF_op(object):
             return 0
         return self.exp[self.log[x] + self.log[y]]
 
+    def pow(self, x, y):
+        if y == 0:
+            return 1
+        if x == 0:
+            return 0
+        exp = self.log[x]
+        return self.exp[exp * y % self.n]
+
     def div(self, x, y):
         if y == 0:
             raise ZeroDivisionError()
         if x == 0:
             return 0
         return self.exp[self.log[x] + self.n - self.log[y]]
-
-def poly_scale(p, x):
-    return [p[i] * x for i in range(0, len(p))]
-
-def poly_add(p, q):
-    r = [0] * max(len(p), len(q))
-    for i in range(0, len(p)):
-        r[i + len(r) - len(p)] = p[i]
-    for i in range(0, len(q)):
-        r[i + len(r) - len(q)] += q[i]
-    return r
-
-def poly_mul(p, q):
-    r = [0] * (len(p) + len(q) - 1)
-    for j in range(0, len(q)):
-        for i in range(0, len(p)):
-            r[i + j] += p[i] * q[j]
-    return r
-
-def poly_eval(p, x):
-    y = p[0]
-    for i in range(1, len(p)):
-        y = x * y + p[i]
-    return y
-
-def poly_div(p, q):
-    if len(q) == 0 or len(q) == 1 and q[0] == 0:
-        raise ZeroDivisionError('q = ' + str(q))
-    if len(p) < len(q):
-        return [GF(0, 3)]
-
-    p = copy(p)
-
-    ans = []
-    for i in range(0, len(p) - len(q) + 1):
-        x = p[i] / q[0]
-        ans.append(x)
-        if x == 0:
-            continue
-        for j in range(len(q)):
-            p[i + j] = p[i + j] - q[j] * x
-    return ans
-
-def poly_roots_uniq(poly):
-    ret = []
-    if len(poly) == 0:
-        return ret
-    op = poly[0].op
-    for i in GF(range(op.n + 1), op.m):
-        if poly_eval(poly, i) == 0:
-            ret.append(i)
-    return ret
-
-def poly_roots(x):
-    ans = []
-    if sum([1 for i in x if i != 0]) == 0:
-        return ans
-    m = x[0].m
-    x = copy(x)
-    for i in range(2**m):
-        d = GF(i, m)
-        factor = [GF(1, m), 1 / GF(i, m)]
-        while poly_eval(x, d) == 0: #multiple root
-            ans.append(d)
-            x = poly_div(x, factor)
-    return ans
 
 _gf_cache = {}
 def get_gf_op(m):
@@ -162,13 +110,16 @@ class GFobj(object):
         self.value = value
         self.op = get_gf_op(m)
 
-    def val(self, x):
+    @staticmethod
+    def val(x):
         if isinstance(x, GFobj):
             return x.value
-        return x
+        return int(x)
 
     def __eq__(self, x):
-        return self.value == (x.value if isinstance(x, GFobj) else x)
+        if isinstance(x, GFobj):
+            x = x.value
+        return self.value == x
 
     def __ne__(self, x):
         return not self.__eq__(x)
@@ -177,38 +128,37 @@ class GFobj(object):
         return self.value.__hash__()
 
     def __add__(self, x):
-        return GFobj(self.op.add(self.value, self.val(x)), self.op.m)
+        return GFobj(self.op.add(self.value, GFobj.val(x)), self.m)
 
     def __sub__(self, x):
-        return GFobj(self.op.sub(self.value, self.val(x)), self.op.m)
+        return GFobj(self.op.sub(self.value, GFobj.val(x)), self.m)
 
     def __mul__(self, x):
-        return GFobj(self.op.mul(self.value, self.val(x)), self.op.m)
+        return GFobj(self.op.mul(self.value, GFobj.val(x)), self.m)
 
     def __div__(self, x):
-        return GFobj(self.op.div(self.value, self.val(x)), self.op.m)
+        return GFobj(self.op.div(self.value, GFobj.val(x)), self.m)
 
     def __pow__(self, x):
-        val = reduce(lambda x, y: self.op.mul(x, y), [self.value] * x, 1)
-        return GFobj(val, self.op.m)
+        return GFobj(self.op.pow(self.value, x), self.m)
     
-    def __radd__(self, x):
+    def __radd__(self, x): #a + b = b + a
         return self.__add__(x)
 
-    def __rsub__(self, x):
-        return self.__sub__(x)
-
-    def __rmul__(self, x):
+    def __rmul__(self, x): #a * b = b * a
         return self.__mul__(x)
 
+    def __rsub__(self, x):
+        return GFobj(self.op.sub(GFobj.val(x), self.value), self.m)
+
     def __rdiv__(self, x):
-        return self.__div__(x)
+        return GFobj(self.op.div(GFobj.val(x), self.value), self.m)
 
     def __pos__(self):
-        return GF(self.value, self.m)
+        return GFobj(self.value, self.m)
 
     def __neg__(self):
-        return GF(self.value, self.m)
+        return GFobj(self.value, self.m)
 
     def __int__(self):
         return self.value
@@ -218,94 +168,80 @@ class GFobj(object):
         #return str(self.value)
 
     def __repr__(self):
-        return 'GF(%d, %d)' % (self.value, self.m)
-        #return str(self.value)
-
-    @staticmethod
-    def val(x):
-        return x.value
+        global _debug
+        if _debug == False:
+            return 'GFobj(%d, %d)' % (self.value, self.m)
+        else: #debug, for easy view
+            return str(self.value) # for test
 
     def log(self):
-        return self.op.log(self.value)
+        if self.value != 0:
+            return self.op.log[self.value]
+        raise ValueError('math domain error: log(GF(0, %d)) is illegal' % self.m)
+
 
 GF_EXP = True
 
 def GF(x, m, exp_of_alpha = False):
-    #if isinstance(x, GFobj): return x
     op = get_gf_op(m)
+
     if exp_of_alpha:
         x = op.exp[x] if isinstance(x, int) else [op.exp[i] for i in x]
+
     if isinstance(x, int):
         return GFobj(x, m)
     else:
         if len(x) == 0:
             return []
-        if isinstance(x[0], int):
+        if isinstance(x[0], int): #one dimension
             return map(lambda i: GFobj(i, m), x)
+        #two dimension
         return [map(lambda i: GFobj(i, m), xi) for xi in x]
 
 if __name__ == "__main__":
-    """
+
+    #"""
     a = GF(2, 3)
-    print a + 5 + 1
-    print a ** 3
-    print a * a * a
+    assert(a == GF(2, 3))
+    assert(a == 2)
+    assert(a != 3)
+    assert(a != GF(4, 3))
 
-    b = GF(3, 3)
-    print b
-    print a + b
-    print b / a
+    assert(a + 5 + 1 == GF(6, 3))
+    assert(5 + a + 1 == GF(6, 3))
+    assert(a - 5 - 1 == GF(6, 3))
+    assert(5 - a - 1 == GF(6, 3))
 
+    assert(a * a == GF(4, 3))
+    assert(a * 4 == a * GF(4, 3))
+    assert(4 * a == a * GF(4, 3))
+    assert(a * a / a == a)
+    assert(GF(3, 3) / a == GF(4, 3))
+    assert(3 / a == GF(4, 3))
+
+    z = GF(0, 3)
+    assert(z ** 0 == 1)
+    assert(z ** 2 == 0)
+    assert(a ** 0 == GF(1, 3))
+    assert(a ** 1 == GF(2, 3))
+    assert(a ** 2 == GF(4, 3))
+    assert(a ** 3 == GF(3, 3))
+    assert(a ** 4 == GF(6, 3))
+    assert(a ** 5 == GF(7, 3))
+    assert(a ** 6 == GF(5, 3))
+    assert(a ** 7 == GF(1, 3))
+    assert(a ** 100 == a ** (100 % 7))
+    assert(GF([], 3) == [])
     m = GF([0,1,2,3,4,5,6,7], 3)
-    print m
-
-    n = GF([], 3)
-    print n
-    """
-
-    """ #poly_div test
-    print poly_div(GF([0], 3), GF([1, 0, 2], 3)) #0
+    assert(m[1:] == GF([0,1,3,2,6,4,5], 3, GF_EXP))
     try:
-        print poly_div(GF([0], 3), GF([0], 3))
+        GF(0, 3).log()
+        assert('log test fail')
     except:
-        print 'ZeroDivisionError catched'
-    print poly_div(GF([6,2,3,3,6], 3), GF([1,0,2],3)) #6,2,4
-    print poly_div(GF([6,2,3,3,6], 4), GF([2,0,2],4)) #6,2,15
-    """
+        pass
 
-    """ #poly_roots test
-    r = poly_roots(GF([0,1,2,3,0,4,0,0], 3)) #0 0 7
-    print 'ans =', map(str, r)
-    r = poly_roots(GF([2, 0, 5, 0, 0], 3)) #5 5
-    print 'ans =', map(str, r)
-    r = poly_roots(GF([2,7,6], 3)) #5 5
-    print 'ans =', map(str, r)
-    """
+    set_debug(True)
+    print "support vectors:", GF(range(7), 3, GF_EXP), "\n"
 
-    """
-    print "support vector:", GF(range(7), 3, GF_EXP), "\n"
-
-    #msg = GF([5, 2, 2, 2, 2], 3)
-    msg = GF([2, 0, 1], 3)
-    c = [poly_eval(msg, i) for i in GF(range(7), 3, GF_EXP)]
-    print map(str, c)
-    print 'value:', map(GFobj.val, c)
-    print 'expon:', map(lambda x: get_gf_op(3).log[x.value], c)
-    # ['a^0=1', 'a^0=1', 'a^0=1', 'a^1=2', 'a^5=7', 'a^0=0', 'a^0=1']
-    #value: [1, 1, 1, 2, 7, 0, 1]
-    #expon: ['a^0', 'a^0', 'a^0', 'a^1', 'a^5', 'a^0', 'a^0']
-    """
-
-    def poly2_eval(poly2, x, y):
-        print poly2
-        ans = 0
-        yi = 1
-        for i in range(len(poly2)):
-            ans = ans + poly_eval(poly2[i], x) * yi
-            yi = yi * y
-        return ans
-
-    Q = [[2, 5]]
-    print poly2_eval(Q, 3, 1)
-    print poly_eval([2, 5], 3)
+    print 'all test passed'
 
