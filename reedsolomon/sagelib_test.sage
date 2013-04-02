@@ -40,14 +40,18 @@ msg = map(lambda i: Gmap[i], [5, 2, 0, 1, 3])
 #msg polynomial: (a + 1)*x^4 + x^3 + a*x + a^2 + 1
 Pmsg = P(msg)
 
-#rs encoder in sagelib
-rs = sagelib.rs.GRS(G, n, k, alphas)        
-
 #codeword to be sent: 
 #   (a^2 + 1, a + 1, a^2 + 1, a^2 + 1, a, a^2 + a, a^2 + a + 1)
-#   it's just the same as: codeword = [Pmsg(i) for i in alphas]
-#   the latter is much faster, actually...
-codeword = rs.encode(Pmsg)
+#   it's just the same as: 
+#       rs = sagelib.rs.GRS(G, n, k, alphas)        
+#       codeword = rs.encode(Pmsg)
+#   which is much slower, actually...
+codeword = [Pmsg(i) for i in alphas]
+
+#broken sth in codeword
+#codeword[3] = 0
+
+print 'codeword:', codeword
 
 # ==== Guruswami-Sudan algorithm ====
 
@@ -75,10 +79,10 @@ Q = sagelib.gs_construct_Q(points, tau, (s, l), wy)
 Pmsg_list = sagelib.factor_bivariate_linear(Q)
 #returned: [(a + 1)*x^4 + x^3 + a*x + a^2 + 1]
 #It's contains the Pmsg 'sent' before :)
+print 'decoded:', Pmsg_list
 
 #lets decode to the original data sent~
 for p in Pmsg_list:
-    m = list(p)
-    print map(lambda x: Gmapr[x], m)
+    print map(lambda x: Gmapr[x], p)
 
 #Output: [5, 2, 0, 1, 3]
