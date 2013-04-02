@@ -15,7 +15,7 @@ q = n + 1
 
 #init a Galois Field on 2^3
 #and then 'a' is the prim element of GF(8)
-G.<a> = GF(n + 1)
+G.<a> = GF(q)
 
 #calculate the support vector of GF(8)
 alphas = [a^i for i in range(n)]
@@ -39,6 +39,7 @@ msg = map(lambda i: Gmap[i], [5, 2, 0, 1, 3])
 
 #msg polynomial: (a + 1)*x^4 + x^3 + a*x + a^2 + 1
 Pmsg = P(msg)
+print "msg polynomial:", Pmsg
 
 #codeword to be sent: 
 #   (a^2 + 1, a + 1, a^2 + 1, a^2 + 1, a, a^2 + a, a^2 + a + 1)
@@ -47,42 +48,50 @@ Pmsg = P(msg)
 #       codeword = rs.encode(Pmsg)
 #   which is much slower, actually...
 codeword = [Pmsg(i) for i in alphas]
+print 'codeword send:', codeword
 
-#broken sth in codeword
-#codeword[3] = 0
+#break sth in codeword (channel noise)
+codeword[3] = 0
 
-print 'codeword:', codeword
+print 'codeword recv:', codeword
 
 # ==== Guruswami-Sudan algorithm ====
 
-#choose tau
-tau = 0
+#choose 'tau' as the decoding radius of GS
+#   It's noted as t in the GS article as the input of 
+#   the algorithm, and shouldn't be larger than the
+#   max possible radius tmax = (n - 1 - sqrt(n * (k - 1))
+#   In the article, max(tau) is calculated from tmax/n
+tau = 1
 s, l = sagelib.gs_params(n, k, tau) #(2, 3)
 
 points = zip(alphas, codeword)
+
 """
 [
-    (1, a^2 + 1),
-    (a, a + 1),
-    (a^2, a^2 + 1),
-    (a + 1, a^2 + 1),
-    (a^2 + a, a),
-    (a^2 + a + 1, a^2 + a),
+    (1, a^2 + 1
+    (a, a + 1
+    (a^2, a^2 + 1
+    (a + 1, 0
+    (a^2 + a, a
+    (a^2 + a + 1, a^2 + a
     (a^2 + 1, a^2 + a + 1)
 ]
 """
 
-wy = k - 1 #(1, k-1)-degree?
+wy = k - 1 #(1, k - 1)-degree?
 Q = sagelib.gs_construct_Q(points, tau, (s, l), wy)
-#the horibble Q(x, y) = (a^2)*x^13 + (a^2)*x^12 + (a^2 + a)*x^11 + (a^2 + a)*x^10 + (a^2)*x^9*y + (a)*x^9 + (a)*x^8*y + (a + 1)*x^8 + (a^2)*x^7*y + (a^2)*x^7 + (a)*x^6*y + (a + 1)*x^5*y^2 + (a)*x^4*y^2 + (a + 1)*x^3*y^2 + x^4 + (a^2 + a + 1)*x^3*y + (a^2 + a)*x^2*y^2 + (a + 1)*x*y^3 + (a^2 + a + 1)*x^3 + (a + 1)*x^2*y + (a^2 + 1)*x*y^2 + (a)*y^3 + (a^2 + 1)*x^2 + x*y + (a + 1)*y^2 + (a^2 + a + 1)*x + (a)*y + (a^2)
+#Sorry, I won't list the horibble Q(x, y) here ...
 
 Pmsg_list = sagelib.factor_bivariate_linear(Q)
 #returned: [(a + 1)*x^4 + x^3 + a*x + a^2 + 1]
 #It's contains the Pmsg 'sent' before :)
-print 'decoded:', Pmsg_list
+print 'decoded list of polynomials:', Pmsg_list
 
-#lets decode to the original data sent~
+#transform to get the original data sent~
 for p in Pmsg_list:
-    print map(lambda x: Gmapr[x], p)
+    m = map(lambda x: Gmapr[x], p)
+    #zero padding at the rear end
+    print 'original msg:', m + [0] * (k - len(m))
 
 #Output: [5, 2, 0, 1, 3]
