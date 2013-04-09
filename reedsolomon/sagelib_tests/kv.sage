@@ -50,7 +50,7 @@ def gs_interpol_matrix_by_mons(points, mons):
         return eqs
     return flatten_once([ eqs_affine(*point) for point in points ])
 
-def gs_interpol_matrix_problem(points, weight_y):
+def gs_interpol_matrix_problem(points, max_deg_y, weight_y):
     """Return the linear system of equations which Q should be a solution to.
     Returns a matrix M and a list of monomials mons, where a vector in the
     right nullspace of M corresponds to an interpolation polynomial $Q$, by the
@@ -61,7 +61,7 @@ def gs_interpol_matrix_problem(points, weight_y):
     #the article says max_deg_Q = floor(sqrt(2*(k-1)*C) - (k-1)/2), which may 
     #cause M.nrows() >= M.ncols(), so I simply added 1.
     max_deg_Q = floor(sqrt(2 * weight_y * C) - weight_y / 2) + 1
-    max_deg_y = floor((1 + sqrt(1 + 8 * C / weight_y)) / 2) - 1
+    #max_deg_y = floor((1 + sqrt(1 + 8 * C / weight_y)) / 2) - 1
 
     #this print is for test purpose
     print 'C = %d, max_deg_Q = %d, max_deg_y = %d' % (C, max_deg_Q, max_deg_y)
@@ -92,10 +92,10 @@ def gs_construct_Q_from_matrix(M, mons):
     Q = sum([ x^mons[i][0]*y^mons[i][1]*sol[i] for i in range(0, len(mons)) ])
     return Q
 
-def gs_construct_Q(points, weight_y):
+def gs_construct_Q(points, max_deg_y, weight_y):
     """Calculate an interpolation polynomial Q(x,y) for the parameters given.
-    points is a list of tuples (xi,yi, m) such that Q(xi,yi) = 0 with multiplicity m.
+    points is a list of tuples (xi, yi, m) such that Q(xi,yi) = 0 with multiplicity m.
     Shorthand for calling gs_construct_Q_from_matrix(*gs_interpol_matrix_problem(...))
     """
     return gs_construct_Q_from_matrix(
-                *gs_interpol_matrix_problem(points, weight_y))
+                *gs_interpol_matrix_problem(points, max_deg_y, weight_y))

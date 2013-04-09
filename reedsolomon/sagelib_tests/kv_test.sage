@@ -60,17 +60,25 @@ for i in range(q):
     print M[i]
 
 #points with multiplicity > 0
+Cost = 0
 points = []
 for j in range(n):
     for i in range(q):
         if M[i][j] > 0:
-            points.append((a^j, a^(i-1) if i > 0 else 0, M[i][j]))
+            mij = M[i][j]
+            Cost += mij * (mij + 1) / 2
+            points.append((a^j, a^(i-1) if i > 0 else 0, mij))
 
+print 'Cost:', Cost
 print 'points:', points
 
-Q = sagelib.kv.gs_construct_Q(points, k - 1)
+weight_y = k - 1
 
-Pmsg_list = sagelib.factor_bivariate_linear(Q, k - 1)
+max_deg_y = floor((1 + sqrt(1 + 8 * Cost / weight_y)) / 2) - 1
+
+Q = sagelib.kv.gs_construct_Q(points, max_deg_y, weight_y)
+
+Pmsg_list = sagelib.factor_bivariate_linear(Q, weight_y)
 print 'decoded list of polynomials:', Pmsg_list
 
 #transform to get the original data sent~
