@@ -2,20 +2,24 @@
 
 import math
 
+from GF import *
+from poly import *
+
 def binomial(n, m):
     Anm = reduce(lambda x, y: x * y, range(n - m + 1, n + 1), 1)
     Cnm = reduce(lambda x, y: x / y, range(2, m + 1), Anm)
     return Cnm
 
-#inplace gaussion elimination, need adjustment for Galois Field
-def gaussion(matrix, default = 1):
+#inplace gaussian elimination, need adjustment for Galois Field
+def gaussian(matrix, default = 1):
     m = matrix
     nrow, ncol = len(m), len(m[0])
     for c in range(min(ncol, nrow)):
         maxrow = c
         for r in range(c + 1, nrow):
-            if abs(m[r][c]) > abs(m[maxrow][c]):
+            if m[r][c] != 0:
                 maxrow = r
+                break
         m[maxrow], m[c] = m[c], m[maxrow]
         for cidx in range(c, ncol):
             if m[c][cidx] != 0:
@@ -62,8 +66,8 @@ def gaussion(matrix, default = 1):
 def right_kernel(matrix):
     M = []
     for row in matrix:
-        M = row + [0]
-    return gaussion(M, default = 1)
+        M.append(row + [0])
+    return gaussian(M, default = 1)
 
 def monomial_list(max_deg_Q, max_deg_y, weight_y):
     mons = []
@@ -121,7 +125,9 @@ def construct_Q_from_matrix(M, mons):
     return Q
 
 #test
-points = [(0, 0, 1), (1, 1, 1), (2, 2, 2)]
+#points = [(0, 0, 1), (1, 1, 1), (2, 2, 2)]
+zero, one, two = GF([0, 1, 2], 3, GF_EXP)
+points = [(zero, zero, 1), (one, one, 1), (two, two, 2)]
 
 k = 5
 weight_y = k - 1 
@@ -130,9 +136,14 @@ Cost = sum([m * (m + 1) / 2 for x, y, m in points])
 
 max_deg_y = int((1 + math.sqrt(1 + 8 * Cost / weight_y)) / 2) - 1
 
+mons = monomial_list(5, 1, 4)
+#print mons
+
 #print weight_y, Cost, max_deg_y
 
-M, mons = interpolation_matrix(points, max_deg_y, weight_y)
+M = interpolation(points, mons)
+
+#M, mons = interpolation_matrix(points, max_deg_y, weight_y)
 for i in M:
     print i, ","
 

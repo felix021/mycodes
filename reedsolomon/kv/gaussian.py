@@ -4,7 +4,7 @@ from copy import copy
 def float_is_zero(n):
     return abs(n) < 1e-10
 
-def gaussion(matrix, default = 1, is_zero = float_is_zero):
+def gaussian(matrix, default = 1, is_zero = float_is_zero):
     m = [map(float, row) for row in matrix] #m = copy(matrix)
     nrow, ncol = len(m), len(m[0])
     for c in range(min(ncol, nrow)):
@@ -104,7 +104,7 @@ for i in m:
     i.append(0)
     print i
 
-sol = gaussion(m, default = 1)
+sol = gaussian(m, default = 1)
 
 sol = [round(i, 9) for i in sol]
 print 'sol =', sol
