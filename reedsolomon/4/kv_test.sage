@@ -32,7 +32,7 @@ P = G['x']
 alphas = [a^i for i in range(n)]
 Gmap  = {}
 Gmapr = {}
-for i in range(8):
+for i in range(q):
     binary = map(int, bin(i)[2:])
     binary.reverse()
     alpha = G(binary)
