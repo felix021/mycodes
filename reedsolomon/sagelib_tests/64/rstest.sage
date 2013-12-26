@@ -1,3 +1,5 @@
+import sys
+
 class RSEncoder(object):
     def __init__(self, n, k):
         self.n = n
@@ -33,10 +35,22 @@ class RSEncoder(object):
 
 rs = RSEncoder(63, 4)
 
-for i in range(1<<8):
+uids = set()
+while len(uids) < 1000:
+    uid = randint(1, 1 << 24)
+    if uid not in uids:
+        uids.add(uid)
+uids = list(uids)
+uids.sort()
+
+for u in uids:
+    sys.stdout.write("%d " % u)
     uid = []
     for j in range(4):
-        uid.append((i % 64))
-        i = i // 64
+        uid.append((u % 64))
+        u = u // 64
     uid.reverse()
-    print rs.encode(uid)
+
+    for i in rs.encode(uid):
+        sys.stdout.write("%d " % i)
+    sys.stdout.write("\n")

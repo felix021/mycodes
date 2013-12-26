@@ -36,6 +36,8 @@ msg = map(lambda i: Gmap[i], [2,6,6,3,1])
 print "msg:", msg
 print "msg polynomial':", P(msg) #same with the previous one
 
+print "codeword:", rs_encode(Pmsg);
+
 # ==== Probabilities ====
 PI = \
 [
@@ -50,6 +52,16 @@ PI = \
 ]
 
 Lambda = 2.50 #the article uses s=12 to iterate, which can be replaced by floor(Lambda * PI)
+
+received = []
+for i in range(n):
+    maxi = 0
+    for j in range(q):
+        if PI[j][i] > PI[j][maxi]:
+            maxi = i
+    received.append(a^(maxi-1) if maxi > 0 else 0)
+print 'received:', received
+
 
 print 'M ='
 M = []
@@ -79,12 +91,37 @@ max_deg_y = floor((1 + sqrt(1 + 8 * Cost / weight_y)) / 2) - 1
 Q = sagelib.kv.gs_construct_Q(points, max_deg_y, weight_y)
 
 Pmsg_list = sagelib.factor_bivariate_linear(Q, weight_y)
-print 'decoded list of polynomials:', Pmsg_list
+#print 'decoded list of polynomials:', Pmsg_list
 
-#transform to get the original data sent~
-for p in Pmsg_list:
+def rs_poly2msg(p):
     m = map(lambda x: Gmapr[x], p)
     #zero padding at the rear end
-    print 'original msg:', m + [0] * (k - len(m))
+    return m + [0] * (k - len(m))
 
-#TODO: which one is better? (calculate the possibility of codeword according to PI)
+def prod(x): #how to cope with zero entries?
+    x = map(lambda t: t if t > 0 else 0.00001, x)
+    return reduce(lambda x, y: x * y, x, 1)
+
+#which one is better? (calculate the possibility of codeword according to PI)
+
+maxp = None
+maxPr = 0
+for p in Pmsg_list:
+    cw = rs_encode(p)
+
+    print '\npoly:', p
+    print 'msg: ', rs_poly2msg(p)
+    print 'cw:  ', cw
+
+    Pr = []
+    for i, mon in enumerate(cw):
+        Pr.append(float(PI[Gmapr[mon]][i]))
+    print 'posibility:', Pr, '=', prod(Pr), prod(Pr)
+
+    #sum seems not the way to calculate possibility
+    if prod(Pr) > maxPr:
+        maxPr = prod(Pr)
+        maxp = p
+
+print '\nfinal result:', maxp
+

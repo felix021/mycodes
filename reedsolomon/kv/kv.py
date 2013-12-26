@@ -87,16 +87,39 @@ def interpolation(points, mons):
                     ihat = mon[0]
                     jhat = mon[1]
                     if ihat >= i and jhat >= j:
+                        if ihat > i:
+                            C = binomial(ihat, i)
+                            p = 0
+                            icoeff = GF(0, 3)
+                            while p < C:
+                                icoeff = icoeff + (x **(ihat - i))
+                                p += 1
+                        else:
+                            icoeff = GF(1, 3)
+                        if jhat > j:
+                            C = binomial(jhat, j)
+                            p = 0
+                            jcoeff = GF(0, 3)
+                            while p < C:
+                                jcoeff = jcoeff + (x **(jhat - j))
+                                p += 1
+                        else:
+                            jcoeff = GF(1, 3)
+
+                        """
                         icoeff = binomial(ihat, i) * (x**(ihat - i)) \
                             if ihat > i else 1
                         jcoeff = binomial(jhat, j) * (y**(jhat - j)) \
                             if jhat > j else 1
+                        """
                         eq[mon] = jcoeff * icoeff
-                eqs.append([eq.get(mon, 0) for mon in mons])
+                eqs.append([eq.get(mon, GF(0, 3)) for mon in mons])
+            print 'EQS:', eqs
         return eqs
     eqs = []
     for p in points:
-        eqs.extend(eqs_affine(*p))
+        for eq in eqs_affine(*p):
+            eqs.append(eq)
     return eqs
 
 """test

@@ -88,6 +88,7 @@ def gs_construct_Q_from_matrix(M, mons):
         # loop for large matrices.
         sol = Sp.random_element()
     # Construct the Q polynomial
+    #sol = Sp.an_element()
     PF.<x,y> = M.base_ring()[]
     Q = sum([ x^mons[i][0]*y^mons[i][1]*sol[i] for i in range(0, len(mons)) ])
     return Q

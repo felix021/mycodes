@@ -43,16 +43,8 @@ mons = sagelib.kv.gs_monomial_list(5, 1, 4)
 #print mons
 
 M = list(sagelib.kv.gs_interpol_matrix_by_mons(points, mons))
-print M
-
-
-
-
-
-
-
-
-
-
+for i in M:
+    print "\n", i
+    dump(i)
 
 
