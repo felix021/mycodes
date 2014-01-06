@@ -12,8 +12,8 @@ import sys
 import random
 from matlab import transpose
 
-n = 7
-k = 3
+n = 63
+k = 4
 
 #in each column, there will be at least one entry with the
 lowest_posibility = 0.4

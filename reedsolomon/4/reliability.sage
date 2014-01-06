@@ -41,6 +41,13 @@ cw = rs_encode(Pmsg)
 idx = [alphasr[i] for i in cw]
 print >>sys.stderr, idx
 
+#introduce some error:
+for i in range(60):
+    pos = randint(0, 62)
+    idx[pos] = randint(0, 63)
+
+print >>sys.stderr, idx
+
 #in each column, there will be at least one entry with the
 lowest_posibility = 0.4
 

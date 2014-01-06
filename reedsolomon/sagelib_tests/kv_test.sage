@@ -51,7 +51,7 @@ PI = \
     [0.000001, 0.000481, 0.000000, 0.000026, 0.000035, 0.000092, 0.000003],
 ]
 
-Lambda = 2.50 #the article uses s=12 to iterate, which can be replaced by floor(Lambda * PI)
+Lambda = 3.50 #the article uses s=12 to iterate, which can be replaced by floor(Lambda * PI)
 
 received = []
 for i in range(n):
@@ -89,11 +89,21 @@ weight_y = k - 1
 max_deg_y = floor((1 + sqrt(1 + 8 * Cost / weight_y)) / 2) - 1
 
 Q = sagelib.kv.gs_construct_Q(points, max_deg_y, weight_y)
+print Q
 
 Pmsg_list = sagelib.factor_bivariate_linear(Q, weight_y)
 #print 'decoded list of polynomials:', Pmsg_list
 
+<<<<<<< Updated upstream
 def rs_poly2msg(p):
+=======
+#transform to get the original data sent~
+for p in Pmsg_list:
+    cw = rs_encode(p)
+    for i, x in enumerate(cw):
+        print float(PI[Gmapr[x]][i]),
+    print ''
+>>>>>>> Stashed changes
     m = map(lambda x: Gmapr[x], p)
     #zero padding at the rear end
     return m + [0] * (k - len(m))
