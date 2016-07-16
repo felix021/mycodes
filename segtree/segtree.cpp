@@ -116,23 +116,6 @@ struct SegTree
         return count(i * 2) + count(i * 2 + 1);
     }
 
-    void dump_node(int i = 1)
-    {
-        if (d[i].covered) {
-            for (int j = d[i].left; j < d[i].right; j++) {
-                printf("%d ", j);
-            }
-            return;
-        }
-        if (d[i].left + 1 == d[i].right) {
-            return;
-        }
-        dump_node(i * 2);
-        dump_node(i * 2 + 1);
-        if (i == 1)
-            printf("\n");
-    }
-
     void render(int i = 1, int covered = false)
     {
         d[i].covered = d[i].covered || covered;
@@ -143,37 +126,32 @@ struct SegTree
         render(i * 2 + 1, d[i].covered);
     }
 
-    int next(int i = 0)
+    void dump_node(int *result, int i = 1)
     {
-        if (d[i].right == length) {
-            return -1;
+        if (d[i].covered) {
+            for (int j = d[i].left; j < d[i].right; j++) {
+                result[++result[0]] = j;
+            }
+            return;
         }
-
-        if (i == 0) {
-            for (i = 1; d[i].left + 1 < d[i].right; i *= 2);
-            return i;
+        if (d[i].left + 1 == d[i].right) {
+            return;
         }
-
-        int parent = i;
-        do {
-            parent /= 2;
-        } while (d[i].right >= d[parent].right);
-
-        int child = parent * 2 + 1;
-        while (d[child].left + 1 != d[child].right) {
-            child *= 2;
-        }
-        return child;
+        dump_node(result, i * 2);
+        dump_node(result, i * 2 + 1);
     }
 
-    int position(int i)
+    int *get_all_covered()
     {
-        return d[i].left;
+        int *result = new int[length + 1];
+        result[0] = 0;
+        dump_node(result);
+        return result;
     }
 
-    int covered(int i)
+    void free_result(int *result)
     {
-        return d[i].covered;
+        delete[] result;
     }
 };
 
@@ -209,25 +187,36 @@ extern "C" {
         pst->dump();
     }
 
-    DLLEXPORT int *st_iter(void *st)
+    struct st_result
+    {
+        int i;
+        int *result;
+        st_result(int *result)
+        {
+            this->i = 1;
+            this->result = result;
+        }
+
+        int next()
+        {
+            if (this->i <= this->result[0]) {
+                return this->result[this->i++];
+            }
+            delete[] this->result;
+            return -1;
+        }
+    };
+
+    DLLEXPORT st_result *st_get_all_covered(void *st)
     {
         SegTree *pst = (SegTree *)st;
-        pst->render();
-        return new int(pst->next(0));
+        int *result = pst->get_all_covered();
+        return new st_result(result);
     }
 
-    DLLEXPORT int st_next(void *st, int *piterator)
+    DLLEXPORT int st_next_result(st_result *result)
     {
-        SegTree *pst = (SegTree *)st;
-        while (*piterator > 0) { 
-            int iterator = *piterator;
-            *piterator = pst->next(*piterator);
-            if (pst->covered(iterator)) {
-                return pst->position(iterator);
-            }
-        }
-        delete piterator;
-        return -1;
+        return result->next();
     }
 
     DLLEXPORT void st_free(void *st)
@@ -237,7 +226,7 @@ extern "C" {
     }
 }
 
-/*
+//*
 int main()
 {
     SegTree *x = new SegTree(7);
@@ -245,12 +234,20 @@ int main()
     x->add(4, 7);
     x->dump();
     printf("count: %d\n", x->count());
-    x->add(0, 4);
-    x->dump();
+    //x->add(0, 4);
+    //x->dump();
 
-    int *piter = st_iter(x), v;
-    while ((v = st_next(x, piter)) >= 0) {
-        printf("%d\n", v);
+    int *result = x->get_all_covered();
+    for (int i = 1; i <= result[0]; i++) {
+        printf("result[%d] = %d\n", i, result[i]);
+    }
+    x->free_result(result);
+
+    int v;
+
+    st_result *r = st_get_all_covered(x);
+    while ((v = st_next_result(r)) >= 0) {
+        printf("result.has %d\n", v);
     }
     return 0;
 }

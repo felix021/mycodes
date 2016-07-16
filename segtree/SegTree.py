@@ -26,9 +26,9 @@ class CSegTree(object):
         return c_SegTree.st_dump(self.st)
 
     def iterate(self):
-        iterator = c_SegTree.st_iter(self.st)
+        st_result = c_SegTree.st_get_all_covered(self.st);
         while True:
-            result = c_SegTree.st_next(self.st, iterator)
+            result = c_SegTree.st_next_result(st_result)
             if result < 0:
                 break
             yield result
@@ -116,8 +116,9 @@ class PYSegTree(object):
             yield i
 
 SegTree = CSegTree
-SegTree = PYSegTree
+#SegTree = PYSegTree
 
+#"""
 begin_at = time.time()
 for i in range(1):
     length = 262144
@@ -126,15 +127,15 @@ for i in range(1):
     for j in range(15):
         st.add(seg * j, seg * j + seg * 2)
     print st.count()
-    #[i for i in st.iterate()]
+    #print len([i for i in st.iterate()])
     #del st
 
 print time.time() - begin_at
+#"""
 
 
 """
-#st = CSegTree(7)
-st = PYSegTree(7)
+st = SegTree(7)
 st.add(4, 7)
 st.add(0, 3)
 st.add(3, 4)
@@ -144,4 +145,4 @@ print 'count:', st.count()
 print [i for i in st.iterate()]
 
 del st
-"""
+#"""
