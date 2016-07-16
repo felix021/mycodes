@@ -38,18 +38,32 @@ class CSegTree(object):
             c_SegTree.st_free(self.st)
 
 class Node(object):
-    def __init__(self, left, right):
+    def __init__(self, left, right, covered=False):
         self.left = left
         self.right = right
-        self.covered = False
+        self.covered = covered
 
+        """
         if left + 1 < right:
             middle = self.middle()
-            self.child_left  = Node(left, middle)
-            self.child_right = Node(middle, right)
+            self.child_left  = Node(left, middle, covered)
+            self.child_right = Node(middle, right, covered)
+        """
+        self.child_left  = None
+        self.child_right = None
 
     def middle(self):
         return (self.left + self.right) / 2
+
+    def left_add(self, left, right):
+        if self.child_left is None:
+            self.child_left = Node(self.left, self.middle(), self.covered)
+        self.child_left.add(left, right)
+
+    def right_add(self, left, right):
+        if self.child_right is None:
+            self.child_right = Node(self.middle(), self.right, self.covered)
+        self.child_right.add(left, right)
 
     def add(self, left, right):
         if left == self.left and right == self.right:
@@ -58,20 +72,30 @@ class Node(object):
 
         middle = self.middle()
         if right <= middle:
-            self.child_left.add(left, right)
+            self.left_add(left, right)
         elif left >= middle:
-            self.child_right.add(left, right)
+            self.right_add(left, right)
         else:
-            self.child_left.add(left, middle)
-            self.child_right.add(middle, right)
+            self.left_add(left, middle)
+            self.right_add(middle, right)
 
-        self.covered = self.child_left.covered and self.child_right.covered
+        if self.child_left and self.child_left.covered and self.child_right and self.child_right.covered:
+            self.covered = True
+            #maybe not necessary to shrink?
+            self.child_left = None
+            self.child_right = None
     
     def dump(self, depth = 0, i = 1):
-        print "%s%d: [%d, %d) => %s" % ("  " * depth, i, self.left, self.right, self.covered)
+        print "%s %d: [%d, %d) => %s" % ("  " * depth, i, self.left, self.right, self.covered)
         if self.left + 1 < self.right:
-            self.child_left.dump(depth + 1, i * 2)
-            self.child_right.dump(depth + 1, i * 2 + 1)
+            if self.child_left:
+                self.child_left.dump(depth + 1, i * 2)
+            else:
+                print "  " * (depth + 1), "[left]"
+            if self.child_right:
+                self.child_right.dump(depth + 1, i * 2 + 1)
+            else:
+                print "  " * (depth + 1), "[right]"
 
     def count(self):
         if self.covered:
@@ -80,7 +104,9 @@ class Node(object):
         if self.left + 1 == self.right:
             return 0
 
-        return self.child_left.count() + self.child_right.count()
+        left_count  = self.child_left.count() if self.child_left else 0
+        right_count = self.child_right.count() if self.child_right else 0
+        return left_count + right_count
 
     def iterate(self):
         if self.covered:
@@ -91,11 +117,13 @@ class Node(object):
         if self.left + 1 == self.right:
             return
 
-        for i in self.child_left.iterate():
-            yield i
+        if self.child_left:
+            for i in self.child_left.iterate():
+                yield i
 
-        for i in self.child_right.iterate():
-            yield i
+        if self.child_right:
+            for i in self.child_right.iterate():
+                yield i
 
 class PYSegTree(object):
     def __init__(self, length):
@@ -127,17 +155,19 @@ for i in range(1):
     for j in range(15):
         st.add(seg * j, seg * j + seg * 2)
     print st.count()
-    #print len([i for i in st.iterate()])
+    print len([i for i in st.iterate()])
     #del st
 
 print time.time() - begin_at
 #"""
 
 
-"""
+#"""
 st = SegTree(7)
 st.add(4, 7)
+st.dump()
 st.add(0, 3)
+st.dump()
 st.add(3, 4)
 st.dump()
 print 'count:', st.count()
