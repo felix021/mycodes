@@ -79,6 +79,9 @@ struct SegTree
             d[i].covered = true;
             return;
         }
+        if (d[i].covered && left >= d[i].left && right <= d[i].right) {
+            return;
+        }
         int middle = (d[i].left + d[i].right) / 2;
         //printf("  middle = %d\n", middle);
         if (right <= middle) {
