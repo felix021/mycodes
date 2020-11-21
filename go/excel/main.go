@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"regexp"
 	"strings"
 
@@ -23,16 +22,26 @@ var (
 	HTML = regexp.MustCompile("<[^>]*?>")
 )
 
+func WaitForEnter() {
+	fmt.Printf("\n\nPress Enter to exit...")
+	s := ""
+	fmt.Scanln(&s)
+}
+
 func main() {
 	inputdir := flag.String("input-dir", "D:/input", "path of the directory")
 	outputdir := flag.String("output-dir", "D:/output", "path of the output directory")
 	flag.Parse()
 
-	fmt.Println(*inputdir, *outputdir)
+	fmt.Printf("\nPut xlsx files in `%s`, and create `%s`, and then run this program.\n\n", *inputdir, *outputdir)
 
 	files, err := ioutil.ReadDir(*inputdir)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Check", *inputdir, "failed:", err)
+		fmt.Println()
+		flag.Usage()
+		WaitForEnter()
+		return
 	}
 
 	for _, f := range files {
@@ -62,7 +71,7 @@ func main() {
 
 				row.ForEachCell(func(col *xlsx.Cell) error {
 					val := HTML.ReplaceAll([]byte(col.String()), nil)
-					tmp := strings.ReplaceAll(string(val), "&nbsp;", "")
+					tmp := strings.ReplaceAll(string(val), "&nbsp;", " ")
 					tmp = strings.ReplaceAll(tmp, "&lt;", "<")
 					tmp = strings.ReplaceAll(tmp, "&gt;", ">")
 					val = HTML.ReplaceAll([]byte(tmp), nil)
@@ -85,4 +94,6 @@ func main() {
 
 		fmt.Println(f.Name(), ": success")
 	}
+
+	WaitForEnter()
 }
