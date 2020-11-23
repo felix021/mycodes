@@ -7,7 +7,7 @@ set -e
 file=/tmp/killed-`date +%Y%m%d`.txt
 
 # with header, so should keep 11 lines
-ps -axo pid,rss,user,cmd -k-rss | head -n 11 > $file
+ps -axo pid,rss,user,cmd -k-rss | grep -v root | head -n 11 > $file
 
 for pid in `tail -n +2 $file | awk '{print $1}'`; do
         echo $pid
