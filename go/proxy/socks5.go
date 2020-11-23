@@ -125,8 +125,7 @@ func Socks5Connect(client net.Conn) (net.Conn, error) {
 		return nil, errors.New("dial dst: " + err.Error())
 	}
 
-	dest.LocalAddr().
-		n, err = client.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+	n, err = client.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
 	if err != nil {
 		dest.Close()
 		return nil, errors.New("write rsp: " + err.Error())
