@@ -10,12 +10,12 @@ ps = subprocess.check_output(["ps", "-axo", "pid,rss,user,cmd", "-k-rss", "--no-
 kill_list = []
 
 for line in ps.split("\n"):
-    pid, rss, user, cmd = line.strip().split(" ", 3)
+    pid, rss, user, cmd = line.strip().split(None, 3)
 
     if user in ["root"]:
         continue
 
-    if rss <= 2 * 1024 * 1024: # 2GB
+    if int(rss) <= 2 * 1024 * 1024: # 2GB
         continue
 
     kill_list.append([pid, rss, user, cmd])
